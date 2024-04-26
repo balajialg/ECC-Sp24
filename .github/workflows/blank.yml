@@ -25,14 +25,24 @@ jobs:
     - name: Execute notebooks
       run: |
         for file in $(find . -type f -name "*.ipynb"); do
-          jupyter nbconvert --ExecutePreprocessor.allow_errors=True --ExecutePreprocessor.timeout=600 --to html "$file"
+          jupyter nbconvert --ExecutePreprocessor.allow_errors=True --ExecutePreprocessor.timeout=600 --to notebook --execute "$file"
         done
 
     - name: Check for errors
       run: |
-        for file in $(find . -type f -name "*.html"); do
-          if grep -q "Execution failed" "$file"; then
-            echo "Notebook execution failed: $file"
-            exit 1
-          fi
+        for file in $(find . -type f -name "*.ipynb"); do
+          python - << EOF
+import nbformat
+
+with open("$file", "r") as f:
+    nb = nbformat.read(f, as_version=4)
+
+for cell in nb.cells:
+    if cell.cell_type == "code" and "outputs" in cell:
+        for output in cell.outputs:
+            if output.output_type == "error":
+                print(f"Error in notebook {file}:")
+                print(output.traceback)
+                exit(1)
+EOF
         done
