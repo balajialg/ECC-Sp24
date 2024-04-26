@@ -31,6 +31,7 @@ jobs:
     - name: Check for errors
       run: |
         for file in $(find . -type f -name "*.ipynb"); do
+          python -c "import nbformat; print(nbformat.__version__)"
           python - << EOF
 import nbformat
 
