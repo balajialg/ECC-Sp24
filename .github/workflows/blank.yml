@@ -18,16 +18,22 @@ jobs:
       with:
         python-version: '3.x'
 
+    - name: Get Changed Files
+      id: changed_files
+      uses: dorny/changed-files@v1
+
     - name: Install dependencies
       run: |
         pip install nbconvert nbformat
 
     - name: Execute changed notebooks
       run: |
-        git diff --name-only HEAD^..HEAD | grep '\.ipynb$' | while read -r file; do
-          jupyter nbconvert --to notebook --execute --inplace "$file"
+        for file in ${{ steps.changed_files.outputs.all }}; do
+          if [[ $file == *.ipynb ]]; then
+            jupyter nbconvert --to notebook --execute --inplace "$file"
+          fi
         done
-
+          
     - name: Check for errors
       run: |
         for file in $(find . -type f -name "*.ipynb"); do
