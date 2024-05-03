@@ -20,7 +20,9 @@ jobs:
 
     - name: Get Changed Files
       id: changed_files
-      uses: dorny/changed-files@v1
+      run: |
+        git diff --name-only HEAD^..HEAD > changed_files.txt
+        echo "::set-output name=changed_files::$(cat changed_files.txt)"
 
     - name: Install dependencies
       run: |
@@ -28,7 +30,7 @@ jobs:
 
     - name: Execute changed notebooks
       run: |
-        for file in ${{ steps.changed_files.outputs.all }}; do
+        for file in $(cat ${{ steps.changed_files.outputs.changed_files }}); do
           if [[ $file == *.ipynb ]]; then
             jupyter nbconvert --to notebook --execute --inplace "$file"
           fi
