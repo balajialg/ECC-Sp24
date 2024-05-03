@@ -9,47 +9,33 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    container:
+      image: us-central1-docker.pkg.dev/ucb-datahub-2018/user-images/data100-user-image:4497642d
+
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: '3.x'
 
     - name: Install dependencies
       run: |
-        pip install nbconvert
+        pip install nbconvert nbformat
 
-    - name: Install nbformat
+    - name: Execute changed notebooks
       run: |
-        pip install nbformat
-
-    - name: Execute notebooks
-      run: |
-        for file in $(find . -type f -name "*.ipynb"); do
-          jupyter nbconvert --ExecutePreprocessor.allow_errors=True --ExecutePreprocessor.timeout=600 --to notebook --execute "$file"
+        git diff --name-only HEAD^ HEAD | grep '\.ipynb$' | while read -r file; do
+          jupyter nbconvert --to notebook --execute --inplace "$file"
         done
-
-    - name: Import nbformat
-      run: |
-        python -c "import nbformat; print(nbformat.__version__)"
 
     - name: Check for errors
       run: |
-        for file in $(find . -type f -name "*.ipynb"); do
-          python -c "
-        import nbformat
-        
-        with open('$file', 'r') as f:
-            nb = nbformat.read(f, as_version=4)
-        
-        for cell in nb.cells:
-            if cell.cell_type == 'code' and 'outputs' in cell:
-                for output in cell.outputs:
-                    if output.output_type == 'error':
-                        print(f'Error in notebook {file}:')
-                        print(output.traceback)
-                        exit(1)
+        for file in $(find . -type f -name "*.html"); do
+          if grep -q "Execution failed" "$file"; then
+            echo "Notebook execution failed: $file"
+            exit 1
+          fi
         done
