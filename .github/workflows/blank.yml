@@ -30,7 +30,7 @@ jobs:
 
     - name: Check for errors
       run: |
-        for file in $(find . -type f -name "*.html"); do
+        for file in $(find . -type f -name "*.ipynb"); do
           if grep -q "Execution failed" "$file"; then
             echo "Notebook execution failed: $file"
             exit 1
