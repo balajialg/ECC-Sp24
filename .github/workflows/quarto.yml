@@ -1,0 +1,43 @@
+name: Convert ipynb to qmd and html
+
+on:
+  push:
+    paths:
+      - 'quarto/**/*.ipynb'
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install jupyter
+          pip install quarto
+
+      - name: Convert ipynb to qmd
+        run: |
+          for notebook in $(find quarto -name "*.ipynb"); do
+            quarto convert $notebook
+          done
+
+      - name: Convert qmd to html
+        run: |
+          for qmd in $(find quarto -name "*.qmd"); do
+            quarto render $qmd
+          done
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
